@@ -9,4 +9,5 @@
 *.s
 *.sym
 /.dep/
+keyboard/.dep/
 /doc/tutorial.html

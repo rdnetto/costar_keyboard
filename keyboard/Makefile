@@ -16,7 +16,7 @@ MODEL = petal_20131001
 #MODEL = squid_20140518
 #MODEL = talk_20151102
 
-LAYOUT = ANSI_ISO_JIS
+LAYOUT = ANSI_CUSTOMIZED
 #LAYOUT = DVORAK
 #LAYOUT = TEST_FLAKE
 #LAYOUT = TEST_COLS
@@ -413,6 +413,11 @@ all: begin gccversion sizebefore build sizeafter end
 # Change the build target to build a HEX file or a library.
 build: elf hex eep lss sym
 #build: lib
+
+flash: all
+	dfu-programmer atmega32u2 erase
+	dfu-programmer atmega32u2 flash ../binaries/${MODEL}_${LAYOUT}.hex
+	dfu-programmer atmega32u2 start
 
 
 elf: $(TARGET).elf
