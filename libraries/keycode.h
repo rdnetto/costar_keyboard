@@ -56,7 +56,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define KC_RSFT {true, 0x20}
 #define KC_RALT {true, 0x40}
 #define KC_RGUI {true, 0x80}
-#define KC_FN   {true, 0x100}
+#define MOD_FN 0x100
+#define KC_FN   {true, MOD_FN}
 
 #define KC_A    {false, KEY_A}
 #define KC_B    {false, KEY_B}
@@ -351,3 +352,4 @@ enum hid_keyboard_keypad_usage {
 };
 
 #endif
+

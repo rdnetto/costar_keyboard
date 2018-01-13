@@ -70,7 +70,7 @@ struct {bool is_pressed; uint8_t bounce;} key[NUMBER_OF_KEYS];
 /* queue contains the keys that are to be sent in the HID packet */
 uint8_t queue[QUEUE_LENGTH+1] = { [0 ... QUEUE_LENGTH] = NO_KEY };
 /* mod_keys is the bit pattern corresponding to pressed modifier keys */
-uint8_t mod_keys = 0;
+uint16_t mod_keys = 0;
 
 /* We forward-declare these local functions. */
 
@@ -240,6 +240,35 @@ void key_release(uint8_t k) {
   send();
 }
 
+/* ### transform_key
+ *
+ * Maps keys into their Fn-layer equivalents.
+ */
+uint16_t transform_key(uint16_t key) {
+    // No-op if FN disabled
+    if (!(mod_keys & MOD_FN)) {
+        return key;
+    }
+
+    // TODO: use working scan codes
+    switch(key) {
+        case KEY_PAUSE:
+            return KEY__MUTE;
+        case KEY_PGUP:
+            return KEY__VOLUP;
+        case KEY_PGDOWN:
+            return KEY__VOLDOWN;
+
+
+        case KEY_ESCAPE:
+            // Special case for reprogramming
+            jump_bootloader();
+
+        default:
+            // No-op all other keys
+            return 0;
+    }
+}
 
 /* ### send
  *
@@ -255,11 +284,15 @@ void key_release(uint8_t k) {
  * packet and send it.
  */
 void send(void) {
-  uint8_t i;
-  for(i = 0; i < QUEUE_LENGTH; i++)
-    keyboard_keys[i] = queue[i] != NO_KEY ? layout[queue[i]].value : 0;
-  keyboard_modifier_keys = mod_keys;
-  usb_keyboard_send();
+    for(uint8_t i = 0; i < QUEUE_LENGTH; i++) {
+        keyboard_keys[i] = queue[i] != NO_KEY
+            ? transform_key(layout[queue[i]].value)
+            : 0;
+    }
+
+    // Don't include the Fn key
+    keyboard_modifier_keys = mod_keys & ~MOD_FN;
+    usb_keyboard_send();
 }
 
 
