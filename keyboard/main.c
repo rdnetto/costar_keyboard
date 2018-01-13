@@ -187,13 +187,6 @@ ISR(TIMER0_COMPA_vect) {
      introduce unwanted EMI. */
   //  release_rows();
 
-  /* Check if the trigger to jump to the bootloader has been
-     activated. In this case when both shift keys are pressed at the
-     same time.
-     jump_bootloader is defined in usb_keyboard.c */
-  if(mod_keys == 0x22)
-    jump_bootloader();
-
   /* Update the keyboard keyboard LEDs.
      update_leds is defined in `hw_interface.c` */
   update_leds(keyboard_leds);
