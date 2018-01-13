@@ -279,7 +279,7 @@ uint16_t transform_key(uint16_t key) {
 void send(void) {
     for(uint8_t i = 0; i < QUEUE_LENGTH; i++) {
         keyboard_keys[i] = queue[i] != NO_KEY
-            ? transform_key(layout[queue[i]].value)
+            ? transform_key(layout[queue[i]].value) & 0xFF
             : 0;
     }
 
