@@ -43,7 +43,11 @@
 /* A key can be either a normal character or a modifier key. A struct
    is used to keep track of the keycode and type of key. Layouts are
    defined in `KEYBOARD_MODEL_FILE`. */
-struct {uint8_t is_modifier; uint8_t value;} layout[] = KEYBOARD_LAYOUT;
+typedef struct {
+    uint8_t is_modifier;
+    uint16_t value;
+} key_t;
+key_t layout[] = KEYBOARD_LAYOUT;
 
 /* Each keys bounce status is represented by an 8-bit integer. The
    lowest bit is set to 1 by the polling routine if the key is seen as
