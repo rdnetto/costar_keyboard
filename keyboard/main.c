@@ -89,9 +89,9 @@ void debug_print(void);
  * handler called every time the timer fires.
  */
 int main(void) {
-  init();
-  poll_timer_enable(); //Turn interrupt polling on
-  for(;;);
+    init();
+    poll_timer_enable(); //Turn interrupt polling on
+    for(;;);
 }
 
 
@@ -100,24 +100,24 @@ int main(void) {
  * Call initialization functions and enable interrupts.
  */
 void init(void) {
-  /* The first thing to init is the USB stack. We also wait for it to
-   * be ready, so we will be able to read keycodes in `keyboard_init`. */
-  usb_init();
-  while(!usb_configured());
+    /* The first thing to init is the USB stack. We also wait for it to
+     * be ready, so we will be able to read keycodes in `keyboard_init`. */
+    usb_init();
+    while(!usb_configured());
 
-  /* The keyboard initialization will take care of setting the
-   * appropriate HW registers and timers. */
-  keyboard_init();
+    /* The keyboard initialization will take care of setting the
+     * appropriate HW registers and timers. */
+    keyboard_init();
 
-  /* What is left to do is to initialize the global variables
-   * used to store the state of the keys. */
-  mod_keys = 0;
-  for(uint8_t k = 0; k < NUMBER_OF_KEYS; k++)
-    key[k].bounce = key[k].is_pressed = false;
+    /* What is left to do is to initialize the global variables
+     * used to store the state of the keys. */
+    mod_keys = 0;
+    for(uint8_t k = 0; k < NUMBER_OF_KEYS; k++)
+        key[k].bounce = key[k].is_pressed = false;
 
-  /* The last step is to enable the interrupts. This is needed because
-   * a timed interrupt will be used to poll the state of the keys. */
-  sei();
+    /* The last step is to enable the interrupts. This is needed because
+     * a timed interrupt will be used to poll the state of the keys. */
+    sei();
 }
 
 
@@ -131,106 +131,108 @@ void init(void) {
  * millisecond, probing each switch row by row.
  */
 ISR(TIMER0_COMPA_vect) {
-  /* We want to be able to scan often enough to fill the debounce
-     register within the specified debounce time of the switches (5ms
-     for Cherry MX). We do NOT want to enter a call to another scan
-     before the previous one finishes. Some care needs to be taken
-     when choosing the parameters in `poll_timer_setup()`, located in
-     `hw_interface.c`. Scans may take different amount of time to
-     finish due to other interrupt based routines. The simple solution
-     is to disable the scan interrupts. */
-  poll_timer_disable();
+    /* We want to be able to scan often enough to fill the debounce
+       register within the specified debounce time of the switches (5ms
+       for Cherry MX). We do NOT want to enter a call to another scan
+       before the previous one finishes. Some care needs to be taken
+       when choosing the parameters in `poll_timer_setup()`, located in
+       `hw_interface.c`. Scans may take different amount of time to
+       finish due to other interrupt based routines. The simple solution
+       is to disable the scan interrupts. */
+    poll_timer_disable();
 
-  /* Poll the matrix.
+    /* Poll the matrix.
 
-     `pull_row` and `probe_column` are defined in `hw_interface.c`.
-     `probe_column` returns `0b00000001` for matrix positions where the
-     key is pressed, `0b00000000` for the rest. This value is written
-     to the lowest bit in the `key[k].bounce` register.
+       `pull_row` and `probe_column` are defined in `hw_interface.c`.
+       `probe_column` returns `0b00000001` for matrix positions where the
+       key is pressed, `0b00000000` for the rest. This value is written
+       to the lowest bit in the `key[k].bounce` register.
 
-     If all but the highest bit are ones, the key may be transiting
-     from a released to a pressed state, and we have registered the
-     key as pressed for seven consecutive polls. If the key is not
-     already marked as pressed in `key[k].pressed` we consider this a true
-     press and not only interference. The key is then added to the
-     send queue.
+       If all but the highest bit are ones, the key may be transiting
+       from a released to a pressed state, and we have registered the
+       key as pressed for seven consecutive polls. If the key is not
+       already marked as pressed in `key[k].pressed` we consider this a true
+       press and not only interference. The key is then added to the
+       send queue.
 
-     If all but the highest bit are zeros, the key may be transiting
-     from a pressed to a released state, and we have registered the
-     key as released for seven consecutive polls. If the key is marked
-     as pressed in `key[k].pressed` we consider this a true release. The
-     key is then removed from the send queue.
+       If all but the highest bit are zeros, the key may be transiting
+       from a pressed to a released state, and we have registered the
+       key as released for seven consecutive polls. If the key is marked
+       as pressed in `key[k].pressed` we consider this a true release. The
+       key is then removed from the send queue.
 
-     We don't want to release a key on a random glitch in the matrix
-     poll. A false release would trigger an extra key press when the
-     glitch has been shifted out of the bounce register.
+       We don't want to release a key on a random glitch in the matrix
+       poll. A false release would trigger an extra key press when the
+       glitch has been shifted out of the bounce register.
 
-     If noise is not present, and we want faster reaction to a key
-     press event, it is possible to trigger the `key_press` on the first
-     positive read of the poll. The release event on the other hand
-     should always be debounced. Otherwise there would be several key
-     presses on both the press and release event due to bounce. */
-  for(uint8_t r = 0, k = 0; r < NUMBER_OF_ROWS; r++) {
-    pull_row(r);
-    for(uint8_t c = 0; c < NUMBER_OF_COLUMNS; c++, k++) {
-      key[k].bounce |= probe_column(c);
+       If noise is not present, and we want faster reaction to a key
+       press event, it is possible to trigger the `key_press` on the first
+       positive read of the poll. The release event on the other hand
+       should always be debounced. Otherwise there would be several key
+       presses on both the press and release event due to bounce. */
+    for(uint8_t r = 0, k = 0; r < NUMBER_OF_ROWS; r++) {
+        pull_row(r);
+        for(uint8_t c = 0; c < NUMBER_OF_COLUMNS; c++, k++) {
+            key[k].bounce |= probe_column(c);
 
-      if(key[k].bounce == 0b01111111 && !key[k].is_pressed)
-        key_press(k);
-      if(key[k].bounce == 0b10000000 &&  key[k].is_pressed)
-        key_release(k);
+            if(key[k].bounce == 0b01111111 && !key[k].is_pressed)
+                key_press(k);
+            if(key[k].bounce == 0b10000000 &&  key[k].is_pressed)
+                key_release(k);
 
-      key[k].bounce <<= 1;
+            key[k].bounce <<= 1;
+        }
     }
-  }
-  /* There probably is no need to release the rows. Rather it might
-     introduce unwanted EMI. */
-  //  release_rows();
+    /* There probably is no need to release the rows. Rather it might
+       introduce unwanted EMI. */
+    //  release_rows();
 
-  /* Update the keyboard keyboard LEDs.
-     update_leds is defined in `hw_interface.c` */
-  update_leds(keyboard_leds);
+    /* Update the keyboard LEDs.
+       update_leds is defined in `hw_interface.c` */
+    update_leds(keyboard_leds);
 
 #ifdef DEBUG
-  debug_print();
+    debug_print();
 #endif
 
-  /* Turn polling back on again. */
-  poll_timer_enable();
+    /* Turn polling back on again. */
+    poll_timer_enable();
 }
 
 
 /* Add key to the send queue. If it is a modifier its bit pattern is
    added to the modifier byte. */
 void key_press(uint8_t k) {
-  uint8_t i;
-  key[k].is_pressed = true;
-  if(layout[k].is_modifier)
-    mod_keys |= layout[k].value;
-  else {
-    for(i = QUEUE_LENGTH-1; i > 0; i--)
-      queue[i] = queue[i-1];
-    queue[0] = k;
-  }
-  send();
+    uint8_t i;
+    key[k].is_pressed = true;
+    if(layout[k].is_modifier) {
+        mod_keys |= layout[k].value;
+    } else {
+        for(i = QUEUE_LENGTH-1; i > 0; i--)
+            queue[i] = queue[i-1];
+
+        queue[0] = k;
+    }
+    send();
 }
 
 
 /* Remove key from the send queue. If it is a modifier key its bit
    pattern is removed from the modifier byte. */
 void key_release(uint8_t k) {
-  uint8_t i;
-  key[k].is_pressed = false;
-  if(layout[k].is_modifier)
-    mod_keys &= ~layout[k].value;
-  else {
-    for(i = 0; i < QUEUE_LENGTH; i++)
-      if(queue[i]==k)
-        break;
-    for(i = i; i < QUEUE_LENGTH; i++)
-      queue[i] = queue[i+1];
-  }
-  send();
+    uint8_t i;
+    key[k].is_pressed = false;
+    if(layout[k].is_modifier) {
+        mod_keys &= ~layout[k].value;
+    } else {
+        for(i = 0; i < QUEUE_LENGTH; i++)
+            if(queue[i]==k)
+                break;
+
+        for(i = i; i < QUEUE_LENGTH; i++)
+            queue[i] = queue[i+1];
+    }
+    send();
 }
 
 /* ### transform_key
@@ -292,14 +294,14 @@ void send(void) {
 /* Prints debug information. */
 uint8_t debug_counter = 0;
 void debug_print(void) {
-  debug_counter++;
-  if(debug_counter > 100) {
-    debug_counter = 0;
-    for(uint8_t i = 0; i < 7; i++)
-      phex(queue[i]);
-    print("\n");
-    for(uint8_t k = 0; k < NUMBER_OF_KEYS; k++)
-      phex(key[k].bounce);
-    print("\n");
-  }
+    debug_counter++;
+    if(debug_counter > 100) {
+        debug_counter = 0;
+        for(uint8_t i = 0; i < 7; i++)
+            phex(queue[i]);
+        print("\n");
+        for(uint8_t k = 0; k < NUMBER_OF_KEYS; k++)
+            phex(key[k].bounce);
+        print("\n");
+    }
 }
